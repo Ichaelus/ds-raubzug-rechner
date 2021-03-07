@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        DS: Raubzug Rechner
-// @version     1.0.0
+// @version     1.0.1
 // @namespace   Ichaelus
 // @author      Ichaelus
 // @copyright   Ichaelus
@@ -54,7 +54,7 @@ if(W.game_data.screen == 'place' && W.game_data.mode == 'scavenge'){
       setTimeout(function(){
           // Show the calculation once and then again if the user clicks any button
           updateCalculation()
-          document.querySelector('.options-container').onclick = updateCalculation
+          document.querySelector('.options-container').onclick = () => setTimeout(updateCalculation, 100)
       }, 250)
   })
 }
