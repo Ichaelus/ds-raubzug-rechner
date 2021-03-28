@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        DS: Raubzug Rechner
-// @version     1.1.0
+// @version     1.1.1
 // @namespace   Ichaelus
 // @author      Ichaelus
 // @copyright   Ichaelus
@@ -117,6 +117,7 @@ function clearLastCalculation(){
 function renderDistributionSuggestion(option, unitDistribution, capacity){
     const previewRow = document.createElement('tr')
     const buttonClass = 'send-distribution-button'
+    const totalUnits = Object.values(unitDistribution).reduce((sum, unitAmount) => sum + unitAmount)
     previewRow.classList.add(rowClass)
     previewRow.classList.add(rowClass)
     previewRow.innerHTML = `
@@ -128,7 +129,7 @@ function renderDistributionSuggestion(option, unitDistribution, capacity){
         <td>${unitDistribution.marcher}</td>
         <td>${unitDistribution.heavy}</td>
         <td>${unitDistribution.knight}</td>
-        <td class="squad-village-required"><a href="#" class="btn btn-default ${buttonClass}">Option ${option.base.id} verschicken</a></td>
+        <td class="squad-village-required"><a href="#" class="btn btn-default ${buttonClass}" ${totalUnits < 10 ? 'disabled' : ''}>Option ${option.base.id} verschicken</a></td>
         <td class="carry-max">${parseFloat(capacity).toLocaleString('de')}</td></tr>`
     previewRow.querySelector(`.${buttonClass}`).onclick = sendSquad.bind(this, option, unitDistribution, capacity)
     unitsTable.appendChild(previewRow)
