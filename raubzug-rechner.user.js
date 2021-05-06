@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        DS: Raubzug Rechner
-// @version     1.1.1
+// @version     1.1.2
 // @namespace   Ichaelus
 // @author      Ichaelus
 // @copyright   Ichaelus
@@ -53,6 +53,11 @@ const rowClass = 'distribution-preview'
 // Chose from: spear, sword, axe, archer, light, marcher, heavy, knight
 const denyList = ['knight']
 let unitsTable = null
+
+
+if(!W.game_data){
+    return // non-game page
+}
 
 if(W.game_data.screen == 'place' && W.game_data.mode == 'scavenge'){
   W.Timing.whenReady(function(){
@@ -121,18 +126,22 @@ function renderDistributionSuggestion(option, unitDistribution, capacity){
     previewRow.classList.add(rowClass)
     previewRow.classList.add(rowClass)
     previewRow.innerHTML = `
-        <td>${unitDistribution.spear}</td>
-        <td>${unitDistribution.sword}</td>
-        <td>${unitDistribution.axe}</td>
-        <td>${unitDistribution.archer}</td>
-        <td>${unitDistribution.light}</td>
-        <td>${unitDistribution.marcher}</td>
-        <td>${unitDistribution.heavy}</td>
-        <td>${unitDistribution.knight}</td>
+        ${typeof(unitDistribution.spear) !== 'undefined' ? tableCell(unitDistribution.spear) : ''}
+        ${typeof(unitDistribution.sword) !== 'undefined' ? tableCell(unitDistribution.sword) : ''}
+        ${typeof(unitDistribution.axe) !== 'undefined' ? tableCell(unitDistribution.axe) : ''}
+        ${typeof(unitDistribution.archer) !== 'undefined' ? tableCell(unitDistribution.archer) : ''}
+        ${typeof(unitDistribution.light) !== 'undefined' ? tableCell(unitDistribution.light) : ''}
+        ${typeof(unitDistribution.marcher) !== 'undefined' ? tableCell(unitDistribution.marcher) : ''}
+        ${typeof(unitDistribution.heavy) !== 'undefined' ? tableCell(unitDistribution.heavy) : ''}
+        ${typeof(unitDistribution.knight) !== 'undefined' ? tableCell(unitDistribution.knight) : ''}
         <td class="squad-village-required"><a href="#" class="btn btn-default ${buttonClass}" ${totalUnits < 10 ? 'disabled' : ''}>Option ${option.base.id} verschicken</a></td>
-        <td class="carry-max">${parseFloat(capacity).toLocaleString('de')}</td></tr>`
+        <td class="carry-max">${parseFloat(capacity).toLocaleString('de')}</td>`
     previewRow.querySelector(`.${buttonClass}`).onclick = sendSquad.bind(this, option, unitDistribution, capacity)
     unitsTable.appendChild(previewRow)
+}
+
+function tableCell(content){
+    return `<td>${content}</td>`
 }
 
 async function sendSquad(option, unitDistribution, capacity){
@@ -143,8 +152,8 @@ async function sendSquad(option, unitDistribution, capacity){
         "body": buildRequestBody(option, unitDistribution, capacity),
         "method": "POST",
         "mode": "cors"
-    });
-    const newData = await response.json();
+    })
+    const newData = await response.json()
     if(newData.response.squad_responses[0].success){
         // Reload the page as:
         // a) The game data has changed (available units)
@@ -161,23 +170,19 @@ async function sendSquad(option, unitDistribution, capacity){
 }
 
 function buildRequestBody(option, unitDistribution, capacity){
-    const body = {
-        'squad_requests[0][village_id]': W.game_data.village.id.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][spear]': unitDistribution.spear.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][sword]': unitDistribution.sword.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][axe]': unitDistribution.axe.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][archer]': unitDistribution.archer.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][light]': unitDistribution.light.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][marcher]': unitDistribution.marcher.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][heavy]': unitDistribution.heavy.toString(),
-        'squad_requests[0][candidate_squad][unit_counts][knight]': unitDistribution.knight.toString(),
-        'squad_requests[0][candidate_squad][carry_max]': (capacity).toString(),
-        'squad_requests[0][option_id]': (option.base.id).toString(),
-        'squad_requests[0][use_premium]': (false).toString(),
-        h: W.game_data.csrf,
-    }
+    const body = { 'squad_requests[0][village_id]': W.game_data.village.id.toString() }
+    Object.keys(unitDistribution).forEach((unit) => {
+        if(typeof(unitDistribution[unit]) !== 'undefined'){
+            body[`squad_requests[0][candidate_squad][unit_counts][${unit}]`] = unitDistribution[unit].toString()
+        }
+    })
+    
+    body['squad_requests[0][candidate_squad][carry_max]'] = (capacity).toString()
+    body['squad_requests[0][option_id]'] = (option.base.id).toString()
+    body['squad_requests[0][use_premium]'] = (false).toString()
+    body.h = W.game_data.csrf
     const urlEncodedBody = Object.keys(body).map( (key) => `${encodeURIComponent(key)}=${body[key]}`).join('&')
-    return urlEncodedBody;
+    return urlEncodedBody
 }
 
 function buildHeaders(){
